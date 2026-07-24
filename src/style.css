@@ -1,0 +1,12 @@
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.5 -apple-system, "Segoe UI", "PingFang SC", sans-serif; color: #24292f; }
+button { cursor: pointer; }
+.btn { padding: 4px 12px; border: 1px solid #d0d7de; border-radius: 6px; background: #f6f8fa; }
+.btn-primary { background: #0969da; color: #fff; border-color: #0969da; }
+.btn-danger { background: #cf222e; color: #fff; border-color: #cf222e; }
+input, select, textarea { padding: 4px 8px; border: 1px solid #d0d7de; border-radius: 6px; font: inherit; }
+table.grid { border-collapse: collapse; width: 100%; }
+table.grid th, table.grid td { border: 1px solid #d0d7de; padding: 4px 8px; text-align: left; white-space: nowrap; }
+table.grid th { background: #f6f8fa; position: sticky; top: 0; }
+.error-box { background: #ffebe9; border: 1px solid #ff818266; border-radius: 6px; padding: 8px 12px; white-space: pre-wrap; color: #cf222e; }
+.muted { color: #57606a; font-size: 12px; }
