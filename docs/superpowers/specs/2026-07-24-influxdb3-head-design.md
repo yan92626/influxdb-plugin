@@ -24,7 +24,7 @@
 ## 2. 整体架构
 
 - **形态**：MV3 扩展。点击扩展图标（`chrome.action.onClicked`）打开完整标签页应用 `index.html`。Service worker 仅负责打开标签页，无其他后台逻辑，无 content script。
-- **技术栈**：Vue 3 + TypeScript + Vite（CRXJS 构建 MV3）、Pinia 状态管理、CodeMirror 6（查询编辑器）、uPlot（折线图，轻量且时序渲染性能好）。
+- **技术栈**：Vue 3 + TypeScript + Vite、Pinia 状态管理、CodeMirror 6（查询编辑器）、uPlot（折线图，轻量且时序渲染性能好）。构建方式：静态 `manifest.json` 与 `background.js` 放 `public/` 目录由 Vite 原样拷贝，页面走普通 Vite 构建（本项目无 content script、background 仅数行，无需 CRXJS 类扩展构建插件）。
 - **CORS 方案**：`host_permissions: ["http://*/*", "https://*/*"]`。扩展页面在此权限下可直接 `fetch` 任意 InfluxDB 地址，无需后台代理。
 - **存储**：连接配置与查询历史存 `chrome.storage.local`。token 明文存储——本地自用场景可接受，README 中注明风险。
 
@@ -32,8 +32,8 @@
 
 ```
 src/
-├── manifest.config.ts      # MV3 manifest（CRXJS）
-├── background.ts           # 仅 action.onClicked → 打开标签页
+├── (public/manifest.json)  # MV3 静态 manifest
+├── (public/background.js)  # 仅 action.onClicked → 打开标签页
 ├── api/
 │   └── client.ts           # InfluxDB3Client：唯一 HTTP 层
 ├── stores/
