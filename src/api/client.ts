@@ -101,6 +101,22 @@ export class InfluxDB3Client {
     return data.databases ?? []
   }
 
+  /** 非 admin token 的降级列库方式：InfluxQL SHOW DATABASES */
+  async listDatabasesViaShow(db?: string): Promise<string[]> {
+    const res = await this.request('/api/v3/query_influxql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...(db ? { db } : {}), q: 'SHOW DATABASES', format: 'json' }),
+    })
+    const rows = (await res.json()) as Record<string, unknown>[]
+    return rows
+      .map((r) => {
+        const { 'iox::measurement': _m, ...rest } = r
+        return String(rest.name ?? rest['iox::database'] ?? Object.values(rest)[0] ?? '')
+      })
+      .filter(Boolean)
+  }
+
   async listTables(db: string): Promise<string[]> {
     const rows = await this.rawSql(
       db,

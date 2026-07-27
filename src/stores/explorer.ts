@@ -9,6 +9,7 @@ export const useExplorerStore = defineStore('explorer', {
     schemas: {} as Record<string, ColumnInfo[]>, // key: `${db}.${table}`
     loading: false,
     error: '',
+    notice: '',
   }),
   actions: {
     reset() {
@@ -16,14 +17,36 @@ export const useExplorerStore = defineStore('explorer', {
       this.tablesByDb = {}
       this.schemas = {}
       this.error = ''
+      this.notice = ''
     },
+    // 列库降级链：configure 管理接口（需 admin）→ SHOW DATABASES → 连接配置的默认数据库
     async loadDatabases() {
       this.loading = true
       this.error = ''
+      this.notice = ''
+      const conns = useConnectionsStore()
+      const defaultDb = conns.active?.defaultDb
       try {
-        this.databases = await useConnectionsStore().client().listDatabases()
+        const client = conns.client()
+        try {
+          this.databases = await client.listDatabases()
+        } catch {
+          try {
+            this.databases = await client.listDatabasesViaShow(defaultDb || undefined)
+            this.notice = 'token 无管理权限，已改用 SHOW DATABASES 列库'
+          } catch (e) {
+            if (defaultDb) {
+              this.databases = [defaultDb]
+              this.notice = 'token 无列库权限，仅显示连接配置的默认数据库'
+            } else {
+              throw e
+            }
+          }
+        }
       } catch (e) {
-        this.error = String((e as Error).message)
+        this.error =
+          String((e as Error).message) +
+          '\n提示：非 admin token 无法列库，可在连接配置中填写「默认数据库」继续使用'
       } finally {
         this.loading = false
       }

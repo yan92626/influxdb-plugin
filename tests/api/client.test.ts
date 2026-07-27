@@ -73,6 +73,26 @@ describe('元数据', () => {
     expect(await makeClient().listDatabases()).toEqual(['iot', 'metrics'])
   })
 
+  it('listDatabasesViaShow 走 influxql 并兼容 name/iox::database 列', async () => {
+    const mock = stubFetch(200, [
+      { 'iox::measurement': 'databases', name: 'iot' },
+      { 'iox::database': 'metrics' },
+    ])
+    expect(await makeClient().listDatabasesViaShow('iot')).toEqual(['iot', 'metrics'])
+    const [url, init] = mock.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('http://db:8181/api/v3/query_influxql')
+    const body = JSON.parse(init.body as string)
+    expect(body.q).toBe('SHOW DATABASES')
+    expect(body.db).toBe('iot')
+  })
+
+  it('listDatabasesViaShow 不传 db 时 body 中无 db 字段', async () => {
+    const mock = stubFetch(200, [])
+    await makeClient().listDatabasesViaShow()
+    const body = JSON.parse((mock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    expect('db' in body).toBe(false)
+  })
+
   it('listTables 通过 information_schema 查表名', async () => {
     const mock = stubFetch(200, [{ table_name: 'cpu' }, { table_name: 'mem' }])
     expect(await makeClient().listTables('iot')).toEqual(['cpu', 'mem'])

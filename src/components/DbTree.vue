@@ -33,6 +33,7 @@ const roleIcon = { time: '🕐', tag: '🏷', field: '📈' } as const
     </div>
     <p v-if="store.error" class="error-box">{{ store.error }}</p>
     <p v-else-if="store.loading" class="muted">加载中…</p>
+    <p v-if="store.notice" class="muted">ℹ️ {{ store.notice }}</p>
     <ul>
       <li v-for="db in store.databases" :key="db">
         <div class="node" @click="toggleDb(db)">{{ openDbs.has(db) ? '▾' : '▸' }} 📁 {{ db }}</div>
