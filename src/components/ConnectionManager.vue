@@ -26,7 +26,7 @@ function cleaned(): SavedConnection {
     ...form,
     name: form.name.trim(),
     url: form.url.trim().replace(/\/+$/, ''),
-    token: form.token.trim(),
+    token: form.token.trim().replace(/^(Bearer|Token)\s+/i, ''),
     defaultDb: form.defaultDb?.trim(),
   }
 }
