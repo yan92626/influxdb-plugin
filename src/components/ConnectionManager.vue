@@ -15,10 +15,12 @@ const blank = (): SavedConnection => ({
 })
 const form = reactive(blank())
 const testMsg = ref('')
+const invalid = ref<Set<string>>(new Set())
 
 function edit(c: SavedConnection) {
   Object.assign(form, c)
   testMsg.value = ''
+  invalid.value = new Set()
 }
 // 粘贴的 token/URL 常带空白符，统一清理
 function cleaned(): SavedConnection {
@@ -30,12 +32,24 @@ function cleaned(): SavedConnection {
     defaultDb: form.defaultDb?.trim(),
   }
 }
+function validate(fields: [key: string, label: string][]): boolean {
+  const c = cleaned()
+  const missing = fields.filter(([key]) => !c[key as keyof SavedConnection])
+  invalid.value = new Set(missing.map(([key]) => key))
+  if (missing.length) {
+    testMsg.value = `⚠️ 请填写：${missing.map(([, label]) => label).join('、')}`
+    return false
+  }
+  return true
+}
 async function save() {
-  if (!form.name.trim() || !form.url.trim()) return
+  if (!validate([['name', '名称'], ['url', '地址'], ['token', 'Token']])) return
   await store.save(cleaned())
   Object.assign(form, blank())
+  testMsg.value = '✅ 已保存'
 }
 async function test() {
+  if (!validate([['url', '地址'], ['token', 'Token']])) return
   testMsg.value = '测试中…'
   try {
     const c = cleaned()
@@ -67,10 +81,10 @@ async function test() {
         </tbody>
       </table>
       <div class="form">
-        <input v-model="form.name" placeholder="名称，如 prod-influx3" />
-        <input v-model="form.url" placeholder="http://localhost:8181" />
-        <input v-model="form.token" type="password" placeholder="Token" />
-        <input v-model="form.defaultDb" placeholder="默认数据库（可选）" />
+        <input v-model="form.name" :class="{ invalid: invalid.has('name') }" placeholder="名称，如 prod-influx3 *" />
+        <input v-model="form.url" :class="{ invalid: invalid.has('url') }" placeholder="http://localhost:8181 *" />
+        <input v-model="form.token" :class="{ invalid: invalid.has('token') }" type="password" placeholder="Token *" />
+        <input v-model="form.defaultDb" placeholder="默认数据库（可选；只读 token 建议填写）" />
         <div>
           <button class="btn" @click="test">测试连接</button>
           <button class="btn btn-primary" @click="save">保存</button>
@@ -86,4 +100,5 @@ async function test() {
 .overlay { position: fixed; inset: 0; background: rgb(0 0 0 / 40%); display: flex; align-items: center; justify-content: center; z-index: 10; }
 .dialog { background: #fff; border-radius: 8px; padding: 20px; width: 560px; max-height: 80vh; overflow: auto; }
 .form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+input.invalid { border-color: #cf222e; background: #fff8f8; }
 </style>
