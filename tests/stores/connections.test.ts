@@ -17,6 +17,18 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('connections store', () => {
+  it('存储中的脏数据（非数组）load 后回退为空数组', async () => {
+    localStorage.setItem('connections', JSON.stringify({}))
+    localStorage.setItem('activeConnectionId', JSON.stringify(123))
+    const s = useConnectionsStore()
+    await s.load()
+    expect(Array.isArray(s.connections)).toBe(true)
+    expect(s.connections).toHaveLength(0)
+    expect(typeof s.activeId).toBe('string')
+    await s.save(conn()) // 关键路径：脏数据不应导致 save 崩溃
+    expect(s.connections).toHaveLength(1)
+  })
+
   it('save 后 load 能恢复，且首个连接自动激活', async () => {
     const s = useConnectionsStore()
     await s.save(conn())

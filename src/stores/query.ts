@@ -20,7 +20,8 @@ export const useQueryStore = defineStore('query', {
   }),
   actions: {
     async loadHistory() {
-      this.history = await storageGet<HistoryEntry[]>(HISTORY_KEY, [])
+      const h = await storageGet<HistoryEntry[]>(HISTORY_KEY, [])
+      this.history = Array.isArray(h) ? h : []
     },
     async run() {
       if (!this.db || !this.text.trim() || this.running) return

@@ -36,8 +36,11 @@ export const useConnectionsStore = defineStore('connections', {
       await storageSet(ACTIVE_KEY, this.activeId)
     },
     async load() {
-      this.connections = await storageGet<SavedConnection[]>(CONNS_KEY, [])
-      this.activeId = await storageGet(ACTIVE_KEY, '')
+      // 旧版本可能把 reactive 数组序列化成对象存入，读取时校验形状防脏数据
+      const conns = await storageGet<SavedConnection[]>(CONNS_KEY, [])
+      this.connections = Array.isArray(conns) ? conns : []
+      const active = await storageGet(ACTIVE_KEY, '')
+      this.activeId = typeof active === 'string' ? active : ''
       if (!this.active && this.connections.length) this.activeId = this.connections[0].id
     },
     async save(conn: SavedConnection) {
