@@ -8,9 +8,11 @@ export async function storageGet<T>(key: string, fallback: T): Promise<T> {
 }
 
 export async function storageSet(key: string, value: unknown): Promise<void> {
+  // Vue reactive Proxy 无法被 chrome.storage 结构化克隆，统一先转纯 JSON 值
+  const plain = value === undefined ? value : JSON.parse(JSON.stringify(value))
   if (globalThis.chrome?.storage?.local) {
-    await chrome.storage.local.set({ [key]: value })
+    await chrome.storage.local.set({ [key]: plain })
     return
   }
-  localStorage.setItem(key, JSON.stringify(value))
+  localStorage.setItem(key, JSON.stringify(plain))
 }

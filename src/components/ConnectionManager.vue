@@ -44,9 +44,13 @@ function validate(fields: [key: string, label: string][]): boolean {
 }
 async function save() {
   if (!validate([['name', '名称'], ['url', '地址'], ['token', 'Token']])) return
-  await store.save(cleaned())
-  Object.assign(form, blank())
-  testMsg.value = '✅ 已保存'
+  try {
+    await store.save(cleaned())
+    Object.assign(form, blank())
+    testMsg.value = '✅ 已保存'
+  } catch (e) {
+    testMsg.value = `❌ 保存失败：${String((e as Error).message)}`
+  }
 }
 async function test() {
   if (!validate([['url', '地址'], ['token', 'Token']])) return
