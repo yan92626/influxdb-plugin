@@ -20,15 +20,26 @@ function edit(c: SavedConnection) {
   Object.assign(form, c)
   testMsg.value = ''
 }
+// 粘贴的 token/URL 常带空白符，统一清理
+function cleaned(): SavedConnection {
+  return {
+    ...form,
+    name: form.name.trim(),
+    url: form.url.trim().replace(/\/+$/, ''),
+    token: form.token.trim(),
+    defaultDb: form.defaultDb?.trim(),
+  }
+}
 async function save() {
-  if (!form.name || !form.url) return
-  await store.save({ ...form })
+  if (!form.name.trim() || !form.url.trim()) return
+  await store.save(cleaned())
   Object.assign(form, blank())
 }
 async function test() {
   testMsg.value = '测试中…'
   try {
-    const client = new InfluxDB3Client({ url: form.url, token: form.token, timeoutMs: 5000 })
+    const c = cleaned()
+    const client = new InfluxDB3Client({ url: c.url, token: c.token, timeoutMs: 5000 })
     await client.health()
     const { version } = await client.ping()
     testMsg.value = `✅ 连接成功（版本 ${version}）`
