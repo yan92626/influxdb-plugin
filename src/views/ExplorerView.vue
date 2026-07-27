@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import DbTree from '../components/DbTree.vue'
 import QueryEditor from '../components/QueryEditor.vue'
 import ResultsTable from '../components/ResultsTable.vue'
+import ResultsChart from '../components/ResultsChart.vue'
+import { toChartData } from '../lib/chart'
+import { toCsv, toJson, download } from '../lib/export'
 import { useConnectionsStore } from '../stores/connections'
 import { useExplorerStore } from '../stores/explorer'
 import { useQueryStore } from '../stores/query'
@@ -10,6 +13,9 @@ import { useQueryStore } from '../stores/query'
 const conns = useConnectionsStore()
 const explorer = useExplorerStore()
 const query = useQueryStore()
+
+const viewMode = ref<'table' | 'chart'>('table')
+const chartData = computed(() => (query.result ? toChartData(query.result) : null))
 
 function pickHistory(ev: Event) {
   const i = Number((ev.target as HTMLSelectElement).value)
@@ -63,8 +69,16 @@ watch(() => conns.activeId, async () => {
       <div class="results">
         <p v-if="query.error" class="error-box">{{ query.error }}</p>
         <template v-else-if="query.result">
-          <p class="muted">{{ query.result.rows.length }} 行 · {{ query.result.durationMs.toFixed(0) }} ms</p>
-          <ResultsTable :result="query.result" />
+          <div class="toolbar">
+            <span class="muted">{{ query.result.rows.length }} 行 · {{ query.result.durationMs.toFixed(0) }} ms</span>
+            <button class="btn" :class="{ 'btn-primary': viewMode === 'table' }" @click="viewMode = 'table'">表格</button>
+            <button class="btn" :class="{ 'btn-primary': viewMode === 'chart' }" :disabled="!chartData" @click="viewMode = 'chart'"
+              :title="chartData ? '' : '结果需包含 time 列和数值列'">折线图</button>
+            <button class="btn" @click="download('result.csv', toCsv(query.result!), 'text/csv')">导出 CSV</button>
+            <button class="btn" @click="download('result.json', toJson(query.result!), 'application/json')">导出 JSON</button>
+          </div>
+          <ResultsChart v-if="viewMode === 'chart' && chartData" :data="chartData" />
+          <ResultsTable v-else :result="query.result" />
         </template>
         <p v-else class="muted">点击左侧表名预览数据，或输入查询后运行</p>
       </div>
