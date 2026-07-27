@@ -11,6 +11,8 @@ export const useQueryStore = defineStore('query', {
     db: '',
     language: 'sql' as 'sql' | 'influxql',
     text: '',
+    // 预览时间范围；大库不带时间条件会超 parquet 文件扫描上限
+    previewRange: '1 hour' as string,
     running: false,
     result: null as QueryResult | null,
     error: '',
@@ -37,6 +39,10 @@ export const useQueryStore = defineStore('query', {
       } catch (e) {
         this.result = null
         this.error = e instanceof ApiError ? `${e.message}${e.detail ? `\n${e.detail}` : ''}` : String(e)
+        if (this.error.includes('file limit')) {
+          this.error +=
+            "\n\n💡 该库数据量大，请在查询中限定时间范围，例如：WHERE time >= now() - INTERVAL '1 hour'"
+        }
       } finally {
         this.running = false
       }
@@ -44,7 +50,11 @@ export const useQueryStore = defineStore('query', {
     async preview(db: string, table: string) {
       this.db = db
       this.language = 'sql'
-      this.text = `SELECT * FROM "${table}" ORDER BY time DESC LIMIT 100`
+      const where =
+        this.previewRange === 'all'
+          ? ''
+          : ` WHERE time >= now() - INTERVAL '${this.previewRange}'`
+      this.text = `SELECT * FROM "${table}"${where} ORDER BY time DESC LIMIT 100`
       await this.run()
     },
   },

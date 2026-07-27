@@ -64,6 +64,16 @@ watch(() => conns.activeId, async () => {
             [{{ h.language }}/{{ h.db }}] {{ h.q.slice(0, 60) }}
           </option>
         </select>
+        <label class="muted">预览范围
+          <select v-model="query.previewRange" title="点击左侧表名预览时的时间范围">
+            <option value="5 minutes">最近 5 分钟</option>
+            <option value="1 hour">最近 1 小时</option>
+            <option value="6 hours">最近 6 小时</option>
+            <option value="1 day">最近 1 天</option>
+            <option value="7 days">最近 7 天</option>
+            <option value="all">全部（大库可能超限）</option>
+          </select>
+        </label>
       </div>
       <QueryEditor v-model="query.text" @run="query.run()" class="qe" />
       <div class="results">
