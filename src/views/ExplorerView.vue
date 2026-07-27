@@ -17,6 +17,11 @@ const query = useQueryStore()
 const viewMode = ref<'table' | 'chart'>('table')
 const chartData = computed(() => (query.result ? toChartData(query.result) : null))
 
+// 防护确认点用浏览器原生 confirm 弹窗
+function runGuarded() {
+  return query.run((msg) => window.confirm(msg))
+}
+
 function pickHistory(ev: Event) {
   const i = Number((ev.target as HTMLSelectElement).value)
   const h = query.history[i]
@@ -55,9 +60,17 @@ watch(() => conns.activeId, async () => {
           <option value="sql">SQL</option>
           <option value="influxql">InfluxQL</option>
         </select>
-        <button class="btn btn-primary" :disabled="query.running" @click="query.run()">
+        <button class="btn btn-primary" :disabled="query.running" @click="runGuarded">
           {{ query.running ? '运行中…' : '运行 (⌘⏎)' }}
         </button>
+        <label class="muted">最大行数
+          <select v-model.number="query.maxRows" title="SELECT 未写 LIMIT 时自动追加此上限">
+            <option :value="100">100</option>
+            <option :value="500">500</option>
+            <option :value="1000">1000</option>
+            <option :value="5000">5000</option>
+          </select>
+        </label>
         <select @change="pickHistory" value="">
           <option value="" disabled>历史查询…</option>
           <option v-for="(h, i) in query.history" :key="h.at" :value="i">
@@ -75,7 +88,7 @@ watch(() => conns.activeId, async () => {
           </select>
         </label>
       </div>
-      <QueryEditor v-model="query.text" @run="query.run()" class="qe" />
+      <QueryEditor v-model="query.text" @run="runGuarded" class="qe" />
       <div class="results">
         <p v-if="query.error" class="error-box">{{ query.error }}</p>
         <template v-else-if="query.result">

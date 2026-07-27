@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ApiError, type QueryResult } from '../api/client'
 import { pushHistory, type HistoryEntry } from '../lib/history'
 import { storageGet, storageSet } from '../lib/storage'
+import { analyzeQuery, ensureLimit } from '../lib/guard'
 import { useConnectionsStore } from './connections'
 
 const HISTORY_KEY = 'queryHistory'
@@ -13,6 +14,8 @@ export const useQueryStore = defineStore('query', {
     text: '',
     // 预览时间范围；大库不带时间条件会超 parquet 文件扫描上限
     previewRange: '1 hour' as string,
+    // 防护：SELECT 无 LIMIT 时自动追加的行数上限
+    maxRows: 1000,
     running: false,
     result: null as QueryResult | null,
     error: '',
@@ -23,16 +26,31 @@ export const useQueryStore = defineStore('query', {
       const h = await storageGet<HistoryEntry[]>(HISTORY_KEY, [])
       this.history = Array.isArray(h) ? h : []
     },
-    async run() {
+    // confirm：需要用户确认的防护点回调，返回 false 则中止执行
+    async run(confirm: (msg: string) => boolean | Promise<boolean> = () => true) {
       if (!this.db || !this.text.trim() || this.running) return
+      const analysis = analyzeQuery(this.text)
+
+      if (analysis.isDangerous && !(await confirm(
+        '⚠️ 这是一条会修改/删除数据的语句，确定执行吗？',
+      ))) return
+
+      if (analysis.isSelect && !analysis.hasTimeFilter && !(await confirm(
+        '该查询没有时间范围条件，在大数据量的库上可能扫描海量数据、拖慢甚至压垮服务端。\n\n' +
+        '建议加上 WHERE time >= now() - INTERVAL \'1 hour\' 之类的条件。仍要继续吗？',
+      ))) return
+
+      // SELECT 无 LIMIT 时自动兜底，防止一次性拉回过多数据
+      const sql = analysis.isSelect ? ensureLimit(this.text, this.maxRows) : this.text
+
       this.running = true
       this.error = ''
       try {
         const client = useConnectionsStore().client()
         this.result =
           this.language === 'sql'
-            ? await client.querySql(this.db, this.text)
-            : await client.queryInfluxql(this.db, this.text)
+            ? await client.querySql(this.db, sql)
+            : await client.queryInfluxql(this.db, sql)
         this.history = pushHistory(this.history, {
           q: this.text, db: this.db, language: this.language, at: Date.now(),
         })
