@@ -6,7 +6,7 @@
     "strict": true,
     "jsx": "preserve",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["chrome", "vite/client"],
+    "types": ["chrome", "node", "vite/client"],
     "skipLibCheck": true,
     "noEmit": true,
     "isolatedModules": true

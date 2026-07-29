@@ -19,12 +19,21 @@ npm run build
 
 Chrome 打开 `chrome://extensions` → 开启「开发者模式」→「加载已解压的扩展程序」→ 选择 `dist/` 目录。点击工具栏扩展图标即可打开。
 
+也可以从 GitHub Releases 下载 `influxdb3-head-vX.Y.Z.zip`，校验同名 `.sha256` 文件后解压安装。
+
+```bash
+shasum -a 256 -c influxdb3-head-vX.Y.Z.zip.sha256
+```
+
 ## 开发
 
 ```bash
 npm run dev    # 浏览器直接访问 dev server 页面调试（存储降级到 localStorage）
 npm test       # 单元测试
+npm run package # 在 release/ 生成 zip 与 SHA-256 校验文件
 ```
+
+版本变更见 [CHANGELOG.md](CHANGELOG.md)，维护者发布流程见 [RELEASING.md](RELEASING.md)。
 
 ## 安全说明
 
