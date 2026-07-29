@@ -15,6 +15,12 @@ describe('pushHistory', () => {
     expect(list[0].at).toBe(3)
   })
 
+  it('相同查询的不同查询时区分别保留', () => {
+    const utc = { ...e('a', 1), timezone: 'UTC' }
+    const shanghai = { ...e('a', 2), timezone: 'Asia/Shanghai' }
+    expect(pushHistory([utc], shanghai)).toEqual([shanghai, utc])
+  })
+
   it('超过上限截断到 50 条', () => {
     const list = Array.from({ length: 50 }, (_, i) => e(`q${i}`))
     expect(pushHistory(list, e('new'))).toHaveLength(50)

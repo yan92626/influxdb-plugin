@@ -47,6 +47,12 @@ describe('ensureLimit', () => {
     expect(ensureLimit('SELECT * FROM cpu ; ', 500)).toBe('SELECT * FROM cpu LIMIT 500')
   })
 
+  it('InfluxQL 的 LIMIT 插入到 tz 子句之前', () => {
+    expect(ensureLimit("SELECT * FROM cpu tz('Asia/Shanghai');", 500)).toBe(
+      "SELECT * FROM cpu LIMIT 500 tz('Asia/Shanghai')",
+    )
+  })
+
   it('非 SELECT 语句不追加', () => {
     expect(ensureLimit('SHOW DATABASES', 500)).toBe('SHOW DATABASES')
   })

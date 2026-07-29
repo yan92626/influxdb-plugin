@@ -29,5 +29,9 @@ export function ensureLimit(raw: string, limit: number): string {
   const a = analyzeQuery(raw)
   if (!a.isSelect || a.hasLimit) return raw
   const trimmed = raw.replace(/\s*;\s*$/, '').trimEnd()
+  const timeZoneClause = trimmed.match(/\s+tz\s*\(\s*'[^']+'\s*\)\s*$/i)
+  if (timeZoneClause?.index != null) {
+    return `${trimmed.slice(0, timeZoneClause.index)} LIMIT ${limit}${timeZoneClause[0]}`
+  }
   return `${trimmed} LIMIT ${limit}`
 }

@@ -3,15 +3,23 @@ import { ApiError, type QueryResult } from '../api/client'
 import { pushHistory, type HistoryEntry } from '../lib/history'
 import { storageGet, storageSet } from '../lib/storage'
 import { analyzeQuery, ensureLimit } from '../lib/guard'
+import {
+  DEFAULT_TIME_ZONE,
+  applyInfluxqlTimeZone,
+  applyResultTimeZone,
+  normalizeTimeZone,
+} from '../lib/timezone'
 import { useConnectionsStore } from './connections'
 
 const HISTORY_KEY = 'queryHistory'
+const TIMEZONE_KEY = 'queryTimezone'
 
 export const useQueryStore = defineStore('query', {
   state: () => ({
     db: '',
     language: 'sql' as 'sql' | 'influxql',
     text: '',
+    timezone: DEFAULT_TIME_ZONE,
     // 预览时间范围；大库不带时间条件会超 parquet 文件扫描上限
     previewRange: '1 hour' as string,
     // 防护：SELECT 无 LIMIT 时自动追加的行数上限
@@ -25,6 +33,11 @@ export const useQueryStore = defineStore('query', {
     async loadHistory() {
       const h = await storageGet<HistoryEntry[]>(HISTORY_KEY, [])
       this.history = Array.isArray(h) ? h : []
+      this.timezone = normalizeTimeZone(await storageGet(TIMEZONE_KEY, DEFAULT_TIME_ZONE))
+    },
+    async setTimezone(timezone: string) {
+      this.timezone = normalizeTimeZone(timezone)
+      await storageSet(TIMEZONE_KEY, this.timezone)
     },
     // confirm：需要用户确认的防护点回调，返回 false 则中止执行
     async run(confirm: (msg: string) => boolean | Promise<boolean> = () => true) {
@@ -41,18 +54,26 @@ export const useQueryStore = defineStore('query', {
       ))) return
 
       // SELECT 无 LIMIT 时自动兜底，防止一次性拉回过多数据
-      const sql = analysis.isSelect ? ensureLimit(this.text, this.maxRows) : this.text
+      let sql = analysis.isSelect ? ensureLimit(this.text, this.maxRows) : this.text
+      if (this.language === 'influxql') {
+        sql = applyInfluxqlTimeZone(sql, this.timezone)
+      }
 
       this.running = true
       this.error = ''
       try {
         const client = useConnectionsStore().client()
-        this.result =
+        const result =
           this.language === 'sql'
             ? await client.querySql(this.db, sql)
             : await client.queryInfluxql(this.db, sql)
+        this.result = applyResultTimeZone(result, this.timezone)
         this.history = pushHistory(this.history, {
-          q: this.text, db: this.db, language: this.language, at: Date.now(),
+          q: this.text,
+          db: this.db,
+          language: this.language,
+          timezone: this.timezone,
+          at: Date.now(),
         })
         await storageSet(HISTORY_KEY, this.history)
       } catch (e) {

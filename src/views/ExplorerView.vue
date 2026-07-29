@@ -6,6 +6,7 @@ import ResultsTable from '../components/ResultsTable.vue'
 import ResultsChart from '../components/ResultsChart.vue'
 import { toChartData } from '../lib/chart'
 import { toCsv, toJson, download } from '../lib/export'
+import { getTimeZoneOptions } from '../lib/timezone'
 import { useConnectionsStore } from '../stores/connections'
 import { useExplorerStore } from '../stores/explorer'
 import { useQueryStore } from '../stores/query'
@@ -16,6 +17,7 @@ const query = useQueryStore()
 
 const viewMode = ref<'table' | 'chart'>('table')
 const chartData = computed(() => (query.result ? toChartData(query.result) : null))
+const timeZones = getTimeZoneOptions()
 
 // 防护确认点用浏览器原生 confirm 弹窗
 function runGuarded() {
@@ -28,6 +30,7 @@ function pickHistory(ev: Event) {
   if (!h) return
   query.db = h.db
   query.language = h.language
+  if (h.timezone) void query.setTimezone(h.timezone)
   query.text = h.q
   ;(ev.target as HTMLSelectElement).value = ''
 }
@@ -60,6 +63,18 @@ watch(() => conns.activeId, async () => {
           <option value="sql">SQL</option>
           <option value="influxql">InfluxQL</option>
         </select>
+        <label class="muted">时区
+          <select
+            class="timezone-select"
+            :value="query.timezone"
+            title="查询结果时区"
+            @change="query.setTimezone(($event.target as HTMLSelectElement).value)"
+          >
+            <option v-for="timezone in timeZones" :key="timezone" :value="timezone">
+              {{ timezone }}
+            </option>
+          </select>
+        </label>
         <button class="btn btn-primary" :disabled="query.running" @click="runGuarded">
           {{ query.running ? '运行中…' : '运行 (⌘⏎)' }}
         </button>
@@ -74,7 +89,7 @@ watch(() => conns.activeId, async () => {
         <select @change="pickHistory" value="">
           <option value="" disabled>历史查询…</option>
           <option v-for="(h, i) in query.history" :key="h.at" :value="i">
-            [{{ h.language }}/{{ h.db }}] {{ h.q.slice(0, 60) }}
+            [{{ h.language }}/{{ h.db }}/{{ h.timezone ?? 'UTC' }}] {{ h.q.slice(0, 60) }}
           </option>
         </select>
         <label class="muted">预览范围
@@ -113,6 +128,7 @@ watch(() => conns.activeId, async () => {
 .explorer { display: flex; height: 100%; }
 aside { width: 280px; min-width: 280px; border-right: 1px solid #d0d7de; overflow: auto; }
 .work { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 8px; gap: 8px; }
-.toolbar { display: flex; gap: 8px; align-items: center; }
+.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.timezone-select { max-width: 190px; }
 .results { flex: 1; overflow: auto; }
 </style>
