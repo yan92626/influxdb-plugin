@@ -52,7 +52,7 @@ export function applyInfluxqlTimeZone(query: string, timeZone: string): string {
 }
 
 const RFC3339 =
-  /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/i
+  /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/i
 
 const formatterCache = new Map<string, Intl.DateTimeFormat>()
 
@@ -103,7 +103,8 @@ export function formatTimestampInTimeZone(value: unknown, timeZone: string): unk
   if (!match) return value
 
   // Date.parse implementations commonly reject fractions longer than milliseconds.
-  const parseable = value.replace(/\.(\d{3})\d+/, '.$1')
+  let parseable = value.replace(/\.(\d{3})\d+/, '.$1')
+  if (!match[4]) parseable += 'Z'
   const date = new Date(parseable)
   if (Number.isNaN(date.getTime())) return value
 

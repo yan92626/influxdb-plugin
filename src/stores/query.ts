@@ -25,6 +25,7 @@ export const useQueryStore = defineStore('query', {
     // 防护：SELECT 无 LIMIT 时自动追加的行数上限
     maxRows: 1000,
     running: false,
+    rawResult: null as QueryResult | null,
     result: null as QueryResult | null,
     error: '',
     history: [] as HistoryEntry[],
@@ -37,6 +38,9 @@ export const useQueryStore = defineStore('query', {
     },
     async setTimezone(timezone: string) {
       this.timezone = normalizeTimeZone(timezone)
+      if (this.rawResult) {
+        this.result = applyResultTimeZone(this.rawResult, this.timezone)
+      }
       await storageSet(TIMEZONE_KEY, this.timezone)
     },
     // confirm：需要用户确认的防护点回调，返回 false 则中止执行
@@ -67,7 +71,8 @@ export const useQueryStore = defineStore('query', {
           this.language === 'sql'
             ? await client.querySql(this.db, sql)
             : await client.queryInfluxql(this.db, sql)
-        this.result = applyResultTimeZone(result, this.timezone)
+        this.rawResult = result
+        this.result = applyResultTimeZone(this.rawResult, this.timezone)
         this.history = pushHistory(this.history, {
           q: this.text,
           db: this.db,
@@ -77,6 +82,7 @@ export const useQueryStore = defineStore('query', {
         })
         await storageSet(HISTORY_KEY, this.history)
       } catch (e) {
+        this.rawResult = null
         this.result = null
         this.error = e instanceof ApiError ? `${e.message}${e.detail ? `\n${e.detail}` : ''}` : String(e)
         if (this.error.includes('file limit')) {

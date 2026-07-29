@@ -43,6 +43,15 @@ describe('查询结果时区转换', () => {
     )
   })
 
+  it('把 InfluxDB SQL 返回的无后缀时间戳按 UTC 转换', () => {
+    expect(formatTimestampInTimeZone('2026-01-01T00:00:00.123456789', 'Asia/Shanghai')).toBe(
+      '2026-01-01T08:00:00.123456789+08:00',
+    )
+    expect(formatTimestampInTimeZone('2026-01-01 00:00:00', 'America/New_York')).toBe(
+      '2025-12-31T19:00:00-05:00',
+    )
+  })
+
   it('正确处理夏令时', () => {
     expect(formatTimestampInTimeZone('2026-07-01T12:00:00Z', 'America/New_York')).toBe(
       '2026-07-01T08:00:00-04:00',
