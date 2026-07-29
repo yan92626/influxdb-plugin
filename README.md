@@ -1,5 +1,7 @@
 # InfluxDB3 Head
 
+[English](README_EN.md) | 简体中文
+
 类似 elasticsearch-head 的 Chrome 扩展，用于可视化管理自建 InfluxDB 3.x（Core / Enterprise）。
 
 ## 功能
