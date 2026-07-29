@@ -100,7 +100,7 @@ export const useQueryStore = defineStore('query', {
         this.previewRange === 'all'
           ? ''
           : ` WHERE time >= now() - INTERVAL '${this.previewRange}'`
-      this.text = `SELECT * FROM "${table}"${where} ORDER BY time DESC LIMIT 100`
+      this.text = `SELECT * FROM "${table}"${where} ORDER BY time DESC LIMIT ${this.maxRows}`
       await this.run()
     },
   },

@@ -4,7 +4,7 @@ import DbTree from '../components/DbTree.vue'
 import QueryEditor from '../components/QueryEditor.vue'
 import ResultsTable from '../components/ResultsTable.vue'
 import ResultsChart from '../components/ResultsChart.vue'
-import { toChartData } from '../lib/chart'
+import { getChartSchema } from '../lib/chart'
 import { toCsv, toJson, download } from '../lib/export'
 import { getTimeZoneOptions } from '../lib/timezone'
 import { useConnectionsStore } from '../stores/connections'
@@ -16,7 +16,7 @@ const explorer = useExplorerStore()
 const query = useQueryStore()
 
 const viewMode = ref<'table' | 'chart'>('table')
-const chartData = computed(() => (query.result ? toChartData(query.result) : null))
+const chartSchema = computed(() => (query.result ? getChartSchema(query.result) : null))
 const timeZones = getTimeZoneOptions()
 
 // 防护确认点用浏览器原生 confirm 弹窗
@@ -110,12 +110,12 @@ watch(() => conns.activeId, async () => {
           <div class="toolbar">
             <span class="muted">{{ query.result.rows.length }} 行 · {{ query.result.durationMs.toFixed(0) }} ms</span>
             <button class="btn" :class="{ 'btn-primary': viewMode === 'table' }" @click="viewMode = 'table'">表格</button>
-            <button class="btn" :class="{ 'btn-primary': viewMode === 'chart' }" :disabled="!chartData" @click="viewMode = 'chart'"
-              :title="chartData ? '' : '结果需包含 time 列和数值列'">折线图</button>
+            <button class="btn" :class="{ 'btn-primary': viewMode === 'chart' }" :disabled="!chartSchema" @click="viewMode = 'chart'"
+              :title="chartSchema ? '' : '结果需包含 time 列和数值列'">折线图</button>
             <button class="btn" @click="download('result.csv', toCsv(query.result!), 'text/csv')">导出 CSV</button>
             <button class="btn" @click="download('result.json', toJson(query.result!), 'application/json')">导出 JSON</button>
           </div>
-          <ResultsChart v-if="viewMode === 'chart' && chartData" :data="chartData" />
+          <ResultsChart v-if="viewMode === 'chart' && chartSchema" :result="query.result" :timezone="query.timezone" />
           <ResultsTable v-else :result="query.result" />
         </template>
         <p v-else class="muted">点击左侧表名预览数据，或输入查询后运行</p>

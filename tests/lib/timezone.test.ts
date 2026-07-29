@@ -4,6 +4,7 @@ import {
   applyInfluxqlTimeZone,
   applyResultTimeZone,
   formatTimestampInTimeZone,
+  formatChartAxisTicks,
   getTimeZoneOptions,
   normalizeTimeZone,
 } from '../../src/lib/timezone'
@@ -74,5 +75,29 @@ describe('查询结果时区转换', () => {
       '2026-01-01T00:00:00Z',
     ])
     expect(result.rows[0][0]).toBe('2026-01-01T00:00:00Z')
+  })
+})
+
+describe('折线图时间轴时区', () => {
+  const timestamps = [
+    Date.parse('2026-01-01T15:59:00Z') / 1000,
+    Date.parse('2026-01-01T16:01:00Z') / 1000,
+  ]
+
+  it('按所选时区格式化横轴刻度并标识跨日', () => {
+    expect(formatChartAxisTicks(timestamps, 'Asia/Shanghai', 60)).toEqual([
+      '2026-01-01 23:59',
+      '2026-01-02 00:01',
+    ])
+    expect(formatChartAxisTicks(timestamps, 'UTC', 60)).toEqual([
+      '2026-01-01 15:59',
+      '16:01',
+    ])
+  })
+
+  it('秒级刻度保留秒数且无效时区回退 UTC', () => {
+    expect(formatChartAxisTicks([timestamps[0] + 5], 'Not/AZone', 10)).toEqual([
+      '2026-01-01 15:59:05',
+    ])
   })
 })

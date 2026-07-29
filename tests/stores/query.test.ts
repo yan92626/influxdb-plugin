@@ -66,3 +66,28 @@ describe('query store 时区查询', () => {
     expect(query.result?.rows[0][0]).toBe('2025-12-31T19:00:00-05:00')
   })
 })
+
+describe('query store 表预览', () => {
+  it('预览使用当前最大行数，避免多序列数据被固定 100 行截断', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => [],
+      text: async () => '',
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const connections = useConnectionsStore()
+    connections.connections = [{ id: 'local', name: 'local', url: 'http://db:8181', token: 'T' }]
+    connections.activeId = 'local'
+
+    const query = useQueryStore()
+    query.maxRows = 500
+    query.previewRange = '6 hours'
+    await query.preview('iot', 'temp')
+
+    expect(query.text).toBe(
+      `SELECT * FROM "temp" WHERE time >= now() - INTERVAL '6 hours' ORDER BY time DESC LIMIT 500`,
+    )
+  })
+})

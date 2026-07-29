@@ -11,7 +11,7 @@ for Elasticsearch.
 - Manage multiple connections with URL and token health checks.
 - Browse databases, tables, and schemas with time, tag, and field roles.
 - Run SQL and InfluxQL queries with selectable IANA time zones.
-- View query results as tables or time-series charts.
+- View query results as tables or interactive time-series charts with dimension grouping, aggregation, and zoom.
 - Export query results as CSV or JSON and restore recent query history.
 - Write Line Protocol data.
 - Create and delete databases with confirmation safeguards.

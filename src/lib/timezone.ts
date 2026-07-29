@@ -41,6 +41,47 @@ export function getTimeZoneOptions(): string[] {
   return [...new Set([...COMMON_TIME_ZONES, local, ...supported].filter(isValidTimeZone))]
 }
 
+interface ChartAxisTimeParts {
+  date: string
+  time: string
+}
+
+function chartAxisTimeParts(timestampSeconds: number, timeZone: string, withSeconds: boolean): ChartAxisTimeParts {
+  const formatter = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: normalizeTimeZone(timeZone),
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: withSeconds ? '2-digit' : undefined,
+    hourCycle: 'h23',
+  })
+  const parts = Object.fromEntries(
+    formatter.formatToParts(new Date(timestampSeconds * 1000))
+      .filter((part) => part.type !== 'literal')
+      .map((part) => [part.type, part.value]),
+  )
+  return {
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${parts.hour}:${parts.minute}${withSeconds ? `:${parts.second}` : ''}`,
+  }
+}
+
+export function formatChartAxisTicks(
+  timestamps: number[],
+  timeZone: string,
+  incrementSeconds: number,
+): string[] {
+  let previousDate = ''
+  return timestamps.map((timestamp, index) => {
+    const parts = chartAxisTimeParts(timestamp, timeZone, incrementSeconds < 60)
+    const includeDate = index === 0 || parts.date !== previousDate
+    previousDate = parts.date
+    return includeDate ? `${parts.date} ${parts.time}` : parts.time
+  })
+}
+
 /** InfluxQL 通过查询末尾的 tz() 子句指定结果时区；显式写出的 tz() 优先。 */
 export function applyInfluxqlTimeZone(query: string, timeZone: string): string {
   const normalized = normalizeTimeZone(timeZone)

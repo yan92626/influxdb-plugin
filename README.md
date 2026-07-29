@@ -8,7 +8,7 @@
 
 - 多连接管理（地址 + Token，支持测试连接）
 - 数据库 / 表树形浏览，表结构（time / tag / field）
-- SQL 与 InfluxQL 查询：IANA 时区选择、结果表格、时序折线图、CSV / JSON 导出、查询历史
+- SQL 与 InfluxQL 查询：IANA 时区选择、结果表格、支持维度拆分/聚合/缩放的时序折线图、CSV / JSON 导出、查询历史
 - Line Protocol 写入
 - 创建 / 删除数据库（删除需输入库名二次确认）
 
