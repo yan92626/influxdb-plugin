@@ -13,6 +13,13 @@ Chrome 扩展清单只接受 1-4 段数字，因此不使用 `-alpha`、`-beta` 
 
 ## 准备发布
 
+### 硬性发布门禁
+
+- 每次修复 bug 或新增 feature，都必须在同一轮修改中更新 `CHANGELOG.md`。
+- 在创建任何版本 tag 前，必须先把待发布的 Changelog 内容交由用户确认。
+- 只有用户明确确认 Changelog 无误后，才允许创建并推送 annotated tag。
+- 未通过上述确认时，可以提交并推送版本与 Changelog 修改，但必须停在打 tag 之前。
+
 以下示例发布 `0.1.2`：
 
 ```bash
